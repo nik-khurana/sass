@@ -8,8 +8,8 @@ from roast_cog import RoastMasterCog
 from google import genai
 
 # --- 0. Render Health Check Server ---
-
 # This server satisfies Render's requirement to bind to a port (usually 10000)
+# It's necessary to prevent the 'No open ports' error.
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -26,7 +26,6 @@ def start_http_server():
         print(f"Starting dummy HTTP server on port {port}...")
         httpd.serve_forever()
     except Exception as e:
-        # If the server fails to start, we still allow the Discord bot to run
         print(f"Error starting HTTP server (non-fatal): {e}")
 
 
@@ -55,13 +54,11 @@ except Exception as e:
 
 
 # --- 2. Discord Client Setup (Intents) ---
-
+# Intent configuration is CRITICAL for the bot to read messages.
 intents = discord.Intents.default()
-# PRIVILEGED INTENTS (MUST be enabled in Discord Developer Portal)
 intents.members = True          
-intents.message_content = True  
+intents.message_content = True  # MUST be enabled in Discord Developer Portal
 
-# Initialize the Client
 client = discord.Client(intents=intents)
 
 # --- 3. Client Events and Cog Loading ---
@@ -69,7 +66,7 @@ client = discord.Client(intents=intents)
 @client.event
 async def on_ready():
     print(f'Logged in as {client.user} (ID: {client.user.id})')
-    print('Bot is ready and roasting!')
+    print('Bot is ready and roasting in all channels!')
     
     # Load the Cog
     roast_master_cog = RoastMasterCog(client, GEMINI_CLIENT)
@@ -81,7 +78,7 @@ if __name__ == '__main__':
     
     # 3a. Start the dummy HTTP server in a separate thread FIRST
     http_thread = threading.Thread(target=start_http_server)
-    http_thread.daemon = True # Allows the main program to exit even if this thread is running
+    http_thread.daemon = True 
     http_thread.start()
 
     # 3b. Start the Discord client
