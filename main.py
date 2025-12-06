@@ -6,13 +6,9 @@ import os
 # --- Configuration & Setup ---
 
 # The environment variables will be set later on the Render hosting platform
-#DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
-#WELCOME_CHANNEL_ID = int(os.getenv("WELCOME_CHANNEL_ID"))
-#GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
-
-DISCORD_TOKEN = "MTQ0NjY3MTY3MzMzNTIxODM5OA.GpYrlS.endUUQMGmtr0dHRiZ8b3gF4Sn3jHIKraqm122k"
-WELCOME_CHANNEL_ID = "1419313171360911423"
-GEMINI_API_KEY = "AIzaSyCXMEZY5suWx8nEapk7dGN99IocXaz5SS8"
+DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
+WELCOME_CHANNEL_ID = int(os.getenv("WELCOME_CHANNEL_ID"))
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 
 print(DISCORD_TOKEN)
@@ -92,5 +88,6 @@ async def roast_user(ctx):
 # --- Run the Bot ---
 
 bot.run(DISCORD_TOKEN)
+
 
 
