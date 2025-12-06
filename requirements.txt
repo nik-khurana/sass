@@ -4,3 +4,6 @@ pytz
 discord.py
 google-genai
 sift-stack-py
+discord.py
+google-genai
+pytz
