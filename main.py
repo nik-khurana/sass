@@ -1,11 +1,13 @@
 import discord
-from discord.ext import commands
 import os
 import sys
 from roast_cog import RoastMasterCog
 from google import genai
+import asyncio
 
 # --- 1. Essential Configuration & Validation ---
+# (Same validation as before, ensuring robust startup)
+
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 WELCOME_CHANNEL_ID_STR = os.getenv("WELCOME_CHANNEL_ID")
@@ -36,27 +38,37 @@ except Exception as e:
     print(f"FATAL ERROR: Failed to initialize Gemini Client. Check GEMINI_API_KEY. Error: {e}")
     sys.exit(1)
 
-# --- 2. Discord Bot Setup (Intents) ---
 
+# --- 2. Discord Client Setup (Intents) ---
+
+# We use discord.Client since we are not using command prefixes.
 intents = discord.Intents.default()
 # PRIVILEGED INTENTS (MUST be enabled in Discord Developer Portal)
-intents.members = True          # Required for on_member_join
-intents.message_content = True  # CRITICAL: Required to read all messages, mentions, and replies
+intents.members = True          
+intents.message_content = True  # CRITICAL: Required for reading mentions and replies
 
-bot = commands.Bot(command_prefix='!', intents=intents)
+# Initialize the Client
+client = discord.Client(intents=intents)
 
-# --- 3. Run the Bot ---
+# --- 3. Client Events and Cog Loading ---
 
-@bot.event
+@client.event
 async def on_ready():
-    print(f'Logged in as {bot.user} (ID: {bot.user.id})')
+    print(f'Logged in as {client.user} (ID: {client.user.id})')
     print('Bot is ready and roasting!')
     
-    # Add the Cog (features) once the bot is ready
-    await bot.add_cog(RoastMasterCog(bot, GEMINI_CLIENT, WELCOME_CHANNEL_ID))
+    # Load the Cog with the necessary data
+    roast_master_cog = RoastMasterCog(client, GEMINI_CLIENT, WELCOME_CHANNEL_ID)
+    
+    # Run the setup function on the Cog to attach event listeners and start the task
+    await roast_master_cog.setup()
+
+    # NOTE: Since discord.Client doesn't support Cogs directly, 
+    # we call the setup method manually, which starts the task and sets listeners.
 
 if __name__ == '__main__':
     if DISCORD_TOKEN:
-        bot.run(DISCORD_TOKEN)
+        # Use asyncio.run to launch the client
+        asyncio.run(client.start(DISCORD_TOKEN))
     else:
         print("Discord token is missing. Bot cannot start.")
