@@ -4,6 +4,7 @@ import datetime
 import pytz
 import sys
 import random
+import os
 from google import genai
 from google.genai import types
 
@@ -17,16 +18,19 @@ class RoastMasterCog:
         # Conversation history per user (stores last 10 exchanges)
         self.conversation_history = {}
         self.MAX_HISTORY = 10
+        
+        # Configured channel ID for bot messages (fun facts, roasts, welcomes)
+        # Read from environment variable BOT_CHANNEL_ID
+        self.TARGET_CHANNEL_ID = int(os.environ.get('BOT_CHANNEL_ID', '0'))
 
         # Define the AI personality (Modify this string to change the bot's tone!)
         self.ROAST_INSTRUCTION = (
-            "You are a Discord Bot named 'Sasshole'. Your sole purpose is to provide "
-            "crisp, funny, mean, but non-offensive responses. Your tone is witty, sarcastic, and "
-            "mildly condescending. Your humor should focus on generic observations. "
-            "Always keep the response short and punchy (under 15 words). Answer the questions if asked by a user. "
-            "You remember previous conversations with users and can reference them."
-            "Be Nice sometimes too."
-            "answer the questions if asked by a user."
+            "You are 'Sasshole', a witty Discord bot with a sharp tongue. "
+            "Your responses are clever, sarcastic, and playfully mean - like a friend who teases you. "
+            "Keep responses SHORT (under 20 words). Be punchy and direct. "
+            "Never be actually hurtful or offensive - just playfully sassy. "
+            "If asked a question, answer it with attitude. "
+            "Reference previous conversations when relevant to roast harder."
         )
         self.GEMINI_CONFIG = types.GenerateContentConfig(
             system_instruction=self.ROAST_INSTRUCTION, temperature=0.9)
@@ -70,14 +74,13 @@ class RoastMasterCog:
 
         await self.client.wait_until_ready()
 
-        target_guild = self.client.guilds[0] if self.client.guilds else None
-        channel = target_guild.system_channel if target_guild else None
+        channel = self.client.get_channel(self.TARGET_CHANNEL_ID)
 
         if not channel:
-            print(f"Error: Could not find a system channel for the fun fact.")
+            print(f"Error: Could not find channel with ID {self.TARGET_CHANNEL_ID} for fun fact.")
             return
 
-        fun_fact_prompt = "Generate one short, extremely interesting, and obscure fun fact."
+        fun_fact_prompt = "Share one fascinating, weird, and obscure fact that will make people go 'wait, really?'. Make it surprising and memorable. Keep it under 2 sentences."
 
         try:
             response = self.gemini_client.models.generate_content(
@@ -95,19 +98,21 @@ class RoastMasterCog:
 
     # --- Task: Random Roast (Every 8 hours) ---
     
-    @tasks.loop(hours=8)
+    @tasks.loop(hours=24)
     async def random_roast(self):
         """Randomly picks a server member and roasts them every 8 hours"""
         
         await self.client.wait_until_ready()
         
-        target_guild = self.client.guilds[0] if self.client.guilds else None
-        channel = target_guild.system_channel if target_guild else None
+        channel = self.client.get_channel(self.TARGET_CHANNEL_ID)
         
         if not channel:
-            print(f"Error: Could not find a system channel for random roast.")
+            print(f"Error: Could not find channel with ID {self.TARGET_CHANNEL_ID} for random roast.")
             sys.stdout.flush()
             return
+        
+        # Get the guild from the channel
+        target_guild = channel.guild
         
         # Get all non-bot members
         members = [m for m in target_guild.members if not m.bot]
@@ -123,7 +128,7 @@ class RoastMasterCog:
         print(f"[RANDOM ROAST] Selected victim: {victim.display_name}")
         sys.stdout.flush()
         
-        roast_prompt = f"Generate a funny, playful, non-offensive roast. Make it witty and sarcastic but keep it light-hearted. Keep it under 30 words. Don't be mean about appearance or personal traits. Do NOT include any name or greeting - just the roast itself."
+        roast_prompt = "Write a quick, witty roast that pokes fun at everyday things like being online too much, coffee addiction, or procrastination. Be clever and sarcastic. Under 25 words. No greeting or name - just the roast."
         
         try:
             response = self.gemini_client.models.generate_content(
@@ -203,11 +208,11 @@ class RoastMasterCog:
 
             # Determine the specific prompt for Gemini
             if is_mention:
-                prompt_text = f"The user, {target_user.display_name}, mentioned you directly. Give a crisp, funny, mean, non-offensive response to their message: '{message.content}'{history_context}"
+                prompt_text = f"{target_user.display_name} said: '{message.content}'\n\nGive a witty, sarcastic comeback. Be clever and playfully mean. Keep it short and punchy.{history_context}"
 
             elif is_reply_to_bot:
                 original_bot_message = message.reference.resolved.content
-                prompt_text = f"The user, {target_user.display_name}, is replying to your previous message, '{original_bot_message}'. Give a funny, mean, non-offensive retort to their new message: '{message.content}'{history_context}"
+                prompt_text = f"You previously said: '{original_bot_message}'\n{target_user.display_name} replied: '{message.content}'\n\nClap back with a clever retort. Stay sassy and reference what was said.{history_context}"
             else:
                 return  # Should not happen
 
@@ -235,10 +240,10 @@ class RoastMasterCog:
     # --- Event Handler: New Member Welcome (Sends to System Channel) ---
 
     async def on_member_join(self, member):
-        channel = member.guild.system_channel
+        channel = self.client.get_channel(self.TARGET_CHANNEL_ID)
 
         if channel and not member.bot:
-            user_prompt = f"Give a savage, fun, non-offensive welcome message that includes a light roast for the new member, {member.mention}. Address them directly. Keep it very short."
+            user_prompt = f"Welcome the new member {member.display_name} with a sassy one-liner that's funny but not mean. Make them feel roasted AND welcomed. Under 20 words."
 
             try:
                 response = self.gemini_client.models.generate_content(
