@@ -10,6 +10,8 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 WELCOME_CHANNEL_ID = int(os.getenv("WELCOME_CHANNEL_ID"))
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
+print(DISCORD_TOKEN)
+
 # Required Intents for commands and member join events
 intents = discord.Intents.default()
 intents.members = True
@@ -83,4 +85,5 @@ async def roast_user(ctx):
 
 
 # --- Run the Bot ---
+
 bot.run(DISCORD_TOKEN)
