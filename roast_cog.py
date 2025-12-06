@@ -8,7 +8,7 @@ class RoastMasterCog:
         self.client = client
         self.gemini_client = gemini_client
         
-        # Define the AI personality
+        # Define the AI personality (Modify this string to change the bot's tone!)
         self.ROAST_INSTRUCTION = (
             "You are a Discord Bot named 'RoastMaster-3000'. Your sole purpose is to provide "
             "crisp, funny, mean, but non-offensive responses. Your tone is witty, sarcastic, and "
@@ -22,7 +22,7 @@ class RoastMasterCog:
         
     async def setup(self):
         """Attaches event listeners and starts the scheduled task."""
-        # Manually attach event listeners from this class to the client
+        # Manually attach event listeners to the client
         self.client.event(self.on_message)
         self.client.event(self.on_member_join)
         
@@ -31,6 +31,7 @@ class RoastMasterCog:
 
     # --- Task: Daily Fun Fact (Sends to System Channel) ---
     
+    # Set to 8:00 AM Central Time (America/Chicago)
     @tasks.loop(time=datetime.time(hour=8, minute=0, tzinfo=pytz.timezone('America/Chicago')))
     async def daily_fun_fact(self):
         """Sends a fun fact daily at 8:00 AM Central Time (America/Chicago)"""
@@ -84,7 +85,7 @@ class RoastMasterCog:
             
             target_user = message.author
             
-            # Determine the specific prompt for Gemini
+            # 3. Determine the specific prompt for Gemini
             if is_mention:
                 prompt_text = f"The user, {target_user.display_name}, mentioned you directly. Give a crisp, funny, mean, non-offensive response to their message: '{message.content}'"
             
@@ -92,7 +93,7 @@ class RoastMasterCog:
                 original_bot_message = message.reference.resolved.content 
                 prompt_text = f"The user, {target_user.display_name}, is replying to your previous message, '{original_bot_message}'. Give a funny, mean, non-offensive retort to their new message: '{message.content}'"
             
-            # Generate and send response
+            # 4. Generate and send response
             try:
                 response = self.gemini_client.models.generate_content(
                     model='gemini-2.5-flash',
