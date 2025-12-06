@@ -2,6 +2,7 @@ import discord
 from discord.ext import tasks
 import datetime
 import pytz
+# Removed: import asyncio
 
 class RoastMasterCog:
     def __init__(self, client, gemini_client):
@@ -22,11 +23,8 @@ class RoastMasterCog:
         
     async def setup(self):
         """Attaches event listeners and starts the scheduled task."""
-        # Manually attach event listeners to the client
         self.client.event(self.on_message)
         self.client.event(self.on_member_join)
-        
-        # Start the daily fun fact task
         self.daily_fun_fact.start()
 
     # --- Task: Daily Fun Fact (Sends to System Channel) ---
@@ -38,7 +36,6 @@ class RoastMasterCog:
         
         await self.client.wait_until_ready()
         
-        # Find the first guild (server) the bot is in and use its system channel
         target_guild = self.client.guilds[0] if self.client.guilds else None
         channel = target_guild.system_channel if target_guild else None
 
@@ -46,8 +43,6 @@ class RoastMasterCog:
             print(f"Error: Could not find a system channel for the fun fact.")
             return
 
-        print(f"Generating and sending daily fun fact to {channel.name}...")
-        
         fun_fact_prompt = "Generate one short, extremely interesting, and obscure fun fact."
         
         try:
@@ -66,7 +61,7 @@ class RoastMasterCog:
         except Exception as e:
             print(f"Gemini API Error in daily_fun_fact: {e}")
 
-    # --- Event Handler: Mentions and Replies (Works in all channels) ---
+    # --- Event Handler: Mentions and Replies ---
 
     async def on_message(self, message):
         # 1. Ignore messages from the bot itself
@@ -85,15 +80,17 @@ class RoastMasterCog:
             
             target_user = message.author
             
-            # 3. Determine the specific prompt for Gemini
+            # Determine the specific prompt for Gemini
             if is_mention:
                 prompt_text = f"The user, {target_user.display_name}, mentioned you directly. Give a crisp, funny, mean, non-offensive response to their message: '{message.content}'"
             
             elif is_reply_to_bot:
                 original_bot_message = message.reference.resolved.content 
                 prompt_text = f"The user, {target_user.display_name}, is replying to your previous message, '{original_bot_message}'. Give a funny, mean, non-offensive retort to their new message: '{message.content}'"
-            
-            # 4. Generate and send response
+            else:
+                return # Should not happen
+
+            # Generate and send response
             try:
                 response = self.gemini_client.models.generate_content(
                     model='gemini-2.5-flash',
@@ -112,12 +109,9 @@ class RoastMasterCog:
     # --- Event Handler: New Member Welcome (Sends to System Channel) ---
 
     async def on_member_join(self, member):
-        # Find the server's designated system channel
         channel = member.guild.system_channel
 
         if channel and not member.bot:
-            print(f"New member {member.display_name} joined. Roasting to system channel.")
-            
             user_prompt = f"Give a savage, fun, non-offensive welcome message that includes a light roast for the new member, {member.mention}. Address them directly. Keep it very short."
             
             try:
