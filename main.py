@@ -3,6 +3,7 @@ from discord.ext import commands
 from google import genai
 import os
 import sys
+import logging
 
 # --- Configuration & Setup ---
 
@@ -12,6 +13,8 @@ import sys
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 WELCOME_CHANNEL_ID_STR = os.getenv("WELCOME_CHANNEL_ID")
+
+logging.warning(GEMINI_API_KEY)
 
 # --- Essential Validation and Conversion ---
 
@@ -107,3 +110,4 @@ else:
     # This path should be caught by the check above, but is a final safeguard.
     print("Discord token is missing. Bot cannot start.")
     sys.exit(1)
+
